@@ -1,6 +1,8 @@
 import {Link} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
+import {QuickAddModal} from './QuickAddModal';
+import {useQuickAdd} from './QuickAddProvider';
 
 /**
  * @param {{
@@ -12,29 +14,66 @@ import {useVariantUrl} from '~/lib/variants';
  * }}
  */
 export function ProductItem({product, loading}) {
+  const {openModal, closeModal, isModalOpen} = useQuickAdd();
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
+  
+  // Check if product has multiple variants to show quick add
+  const hasVariants = product.variants?.nodes?.length > 1;
+  const hasOptions = product.options?.length > 0;
+  const showQuickAdd = hasVariants && hasOptions;
+
+  const handleQuickAddClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openModal(product.id);
+  };
+
   return (
-    <Link
-      className="product-item"
-      key={product.id}
-      prefetch="intent"
-      to={variantUrl}
-    >
-      {image && (
-        <Image
-          alt={image.altText || product.title}
-          aspectRatio="1/1"
-          data={image}
-          loading={loading}
-          sizes="(min-width: 45em) 400px, 100vw"
-        />
-      )}
-      <h4>{product.title}</h4>
-      <small>
-        <Money data={product.priceRange.minVariantPrice} />
-      </small>
-    </Link>
+    <div className="product-item-wrapper">
+      <div className="product-item">
+        <Link
+          key={product.id}
+          prefetch="intent"
+          to={variantUrl}
+          className="product-item-link"
+          onClick={() => closeModal()} // Close modal when navigating to product page
+        >
+          {image && (
+            <div className="product-item-image-container">
+              <Image
+                alt={image.altText || product.title}
+                aspectRatio="1/1"
+                data={image}
+                loading={loading}
+                sizes="(min-width: 45em) 400px, 100vw"
+              />
+              {showQuickAdd && (
+                <button
+                  className="quick-add-btn"
+                  onClick={handleQuickAddClick}
+                  aria-label={`Quick add ${product.title}`}
+                >
+                  Quick Add
+                </button>
+              )}
+            </div>
+          )}
+          <div className="product-item-info">
+            <h4>{product.title}</h4>
+            <small>
+              <Money data={product.priceRange.minVariantPrice} />
+            </small>
+          </div>
+        </Link>
+      </div>
+      
+      <QuickAddModal
+        product={product}
+        isOpen={isModalOpen(product.id)}
+        onClose={closeModal}
+      />
+    </div>
   );
 }
 

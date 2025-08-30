@@ -2,6 +2,7 @@ import {Await, useLoaderData, Link} from 'react-router';
 import {Suspense} from 'react';
 import {Image} from '@shopify/hydrogen';
 import {ProductItem} from '~/components/ProductItem';
+import { QuickAddProvider } from '~/components/QuickAddProvider';
 
 /**
  * @type {MetaFunction}
@@ -102,19 +103,21 @@ function RecommendedProducts({products}) {
   return (
     <div className="recommended-products">
       <h2>Recommended Products</h2>
-      <Suspense fallback={<div>Loading...</div>}>
-        <Await resolve={products}>
-          {(response) => (
-            <div className="recommended-products-grid">
-              {response
-                ? response.products.nodes.map((product) => (
-                    <ProductItem key={product.id} product={product} />
-                  ))
-                : null}
-            </div>
-          )}
-        </Await>
-      </Suspense>
+      <QuickAddProvider>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Await resolve={products}>
+            {(response) => (
+                <div className="recommended-products-grid">
+                  {response
+                    ? response.products.nodes.map((product) => (
+                        <ProductItem key={product.id} product={product} />
+                      ))
+                    : null}
+                </div>
+            )}
+          </Await>
+        </Suspense>
+      </QuickAddProvider>
       <br />
     </div>
   );
@@ -160,6 +163,88 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       altText
       width
       height
+    }
+    options {
+      name
+      optionValues {
+        name
+        firstSelectableVariant {
+          ...ProductVariant
+        }
+        swatch {
+          color
+          image {
+            previewImage {
+              url
+            }
+          }
+        }
+      }
+    }
+    variants(first: 100) {
+      nodes {
+        id
+        availableForSale
+        image {
+          id
+          url
+          altText
+          width
+          height
+        }
+        price {
+          amount
+          currencyCode
+        }
+        compareAtPrice {
+          amount
+          currencyCode
+        }
+        selectedOptions {
+          name
+          value
+        }
+        sku
+        title
+        unitPrice {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
+  fragment ProductVariant on ProductVariant {
+    availableForSale
+    compareAtPrice {
+      amount
+      currencyCode
+    }
+    id
+    image {
+      __typename
+      id
+      url
+      altText
+      width
+      height
+    }
+    price {
+      amount
+      currencyCode
+    }
+    product {
+      title
+      handle
+    }
+    selectedOptions {
+      name
+      value
+    }
+    sku
+    title
+    unitPrice {
+      amount
+      currencyCode
     }
   }
   query RecommendedProducts ($country: CountryCode, $language: LanguageCode)

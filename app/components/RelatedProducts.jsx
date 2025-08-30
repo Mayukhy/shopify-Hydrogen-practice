@@ -3,6 +3,7 @@ import {Await} from 'react-router';
 import {Swiper, SwiperSlide} from 'swiper/react';
 import {Navigation, Pagination} from 'swiper/modules';
 import {ProductItem} from './ProductItem';
+import {QuickAddProvider} from './QuickAddProvider';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -53,19 +54,21 @@ const NavigationButtons = () => (
 
 export default function RelatedProducts({product, relatedProducts}) {
   return (
-    <div className="related-products">
-      <h3>Related Products</h3>
-      <Suspense fallback={<RelatedProductsSkeleton />}>
-        <Await resolve={relatedProducts}>
-          {(resolvedRelatedProducts) => (
-            <RelatedProductsContent 
-              product={product} 
-              relatedProducts={resolvedRelatedProducts} 
-            />
-          )}
-        </Await>
-      </Suspense>
-    </div>
+    <QuickAddProvider>
+      <div className="related-products">
+        <h3>Related Products</h3>
+        <Suspense fallback={<RelatedProductsSkeleton />}>
+          <Await resolve={relatedProducts}>
+            {(resolvedRelatedProducts) => (
+              <RelatedProductsContent 
+                product={product} 
+                relatedProducts={resolvedRelatedProducts} 
+              />
+            )}
+          </Await>
+        </Suspense>
+      </div>
+    </QuickAddProvider>
   );
 }
 

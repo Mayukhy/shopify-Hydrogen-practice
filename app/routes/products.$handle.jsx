@@ -285,6 +285,23 @@ const RELATED_PRODUCTS_QUERY = `#graphql
                 width
                 height
               }
+              options {
+                name
+                optionValues {
+                  name
+                  firstSelectableVariant {
+                    ...ProductVariant
+                  }
+                  swatch {
+                    color
+                    image {
+                      previewImage {
+                        url
+                      }
+                    }
+                  }
+                }
+              }
               priceRange {
                 minVariantPrice {
                   amount
@@ -342,6 +359,7 @@ const RELATED_PRODUCTS_QUERY = `#graphql
       }
     }
   }
+  ${PRODUCT_VARIANT_FRAGMENT}
 `;
 
 /** @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs */
