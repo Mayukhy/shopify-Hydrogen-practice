@@ -106,7 +106,7 @@ function loadDeferredData({context, params}) {
 
 export default function Product() {
   /** @type {LoaderReturnData} */
-  const {product, context, relatedProducts} = useLoaderData();
+  const {product, relatedProducts} = useLoaderData();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -127,7 +127,7 @@ export default function Product() {
   const {title, descriptionHtml} = product;
 
   return (
-    <>
+    <section>
       <div className="product">
         <ProductImage image={selectedVariant?.image} />
         <div className="product-main">
@@ -167,7 +167,7 @@ export default function Product() {
         />
       </div>
       <RelatedProducts product={product} relatedProducts={relatedProducts} />
-    </>
+    </section>
   );
 }
 
