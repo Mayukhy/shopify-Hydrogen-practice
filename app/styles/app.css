@@ -710,7 +710,7 @@ button.reset:hover:not(:has(> *)) {
 
 .product-item-image-container:hover .quick-add-btn {
   opacity: 1;
-  transform:translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 .quick-add-btn {

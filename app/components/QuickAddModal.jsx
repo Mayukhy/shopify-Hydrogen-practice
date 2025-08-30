@@ -93,16 +93,11 @@ export function QuickAddModal({product, isOpen, onClose}) {
   // Handle add to cart with loading state
   const handleAddToCart = async (event) => {
     setIsAddingToCart(true);
-    
-    // Add a small delay to show loading state
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    // Open cart drawer
-    open("cart");
     await event.target.form.requestSubmit();
-
-    // Close modal after successful add
-    handleClose();
+    // Add a small delay to show loading state
+    await new Promise(resolve => setTimeout(resolve, 750));
+    await handleClose();
+    await open("cart");
   };
 
   return (
@@ -167,7 +162,7 @@ export function QuickAddModal({product, isOpen, onClose}) {
                   quantity: 1,
                 }
               ] : []}
-              onClick={(e) =>handleAddToCart(e)}
+              onClick={(e) => handleAddToCart(e)}
             >
               {isAddingToCart ? (
                 <div className="loading-button-content">
