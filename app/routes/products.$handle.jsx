@@ -11,6 +11,7 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import RelatedProducts from '~/components/RelatedProducts';
 
 /**
  * @type {MetaFunction<typeof loader>}
@@ -67,6 +68,7 @@ async function loadCriticalData({context, params, request}) {
 
   return {
     product,
+    context
   };
 }
 
@@ -79,13 +81,33 @@ async function loadCriticalData({context, params, request}) {
 function loadDeferredData({context, params}) {
   // Put any API calls that is not critical to be available on first page render
   // For example: product reviews, product recommendations, social feeds.
+  const {handle} = params;
+  const {storefront} = context;
 
-  return {};
+  const relatedProducts = storefront.query(RELATED_PRODUCTS_QUERY, {
+    variables: {
+      handle,
+      count: 8,
+    },
+  }).then((result) => {
+    // Extract products from the first collection
+    const collection = result.product?.collections?.nodes?.[0];
+    return {
+      products: collection?.products || { nodes: [] }
+    };
+  }).catch(() => {
+    // Return empty result if query fails
+    return { products: { nodes: [] } };
+  });
+
+  return {
+    relatedProducts,
+  };
 }
 
 export default function Product() {
   /** @type {LoaderReturnData} */
-  const {product} = useLoaderData();
+  const {product, context, relatedProducts} = useLoaderData();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -106,44 +128,47 @@ export default function Product() {
   const {title, descriptionHtml} = product;
 
   return (
-    <div className="product">
-      <ProductImage image={selectedVariant?.image} />
-      <div className="product-main">
-        <h1>{title}</h1>
-        <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
+    <>
+      <div className="product">
+        <ProductImage image={selectedVariant?.image} />
+        <div className="product-main">
+          <h1>{title}</h1>
+          <ProductPrice
+            price={selectedVariant?.price}
+            compareAtPrice={selectedVariant?.compareAtPrice}
+          />
+          <br />
+          <ProductForm
+            productOptions={productOptions}
+            selectedVariant={selectedVariant}
+          />
+          <br />
+          <br />
+          <p>
+            <strong>Description</strong>
+          </p>
+          <br />
+          <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+          <br />
+        </div>
+        <Analytics.ProductView
+          data={{
+            products: [
+              {
+                id: product.id,
+                title: product.title,
+                price: selectedVariant?.price.amount || '0',
+                vendor: product.vendor,
+                variantId: selectedVariant?.id || '',
+                variantTitle: selectedVariant?.title || '',
+                quantity: 1,
+              },
+            ],
+          }}
         />
-        <br />
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-        />
-        <br />
-        <br />
-        <p>
-          <strong>Description</strong>
-        </p>
-        <br />
-        <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-        <br />
       </div>
-      <Analytics.ProductView
-        data={{
-          products: [
-            {
-              id: product.id,
-              title: product.title,
-              price: selectedVariant?.price.amount || '0',
-              vendor: product.vendor,
-              variantId: selectedVariant?.id || '',
-              variantTitle: selectedVariant?.title || '',
-              quantity: 1,
-            },
-          ],
-        }}
-      />
-    </div>
+      <RelatedProducts product={product} relatedProducts={relatedProducts} />
+    </>
   );
 }
 
@@ -237,6 +262,87 @@ const PRODUCT_QUERY = `#graphql
     }
   }
   ${PRODUCT_FRAGMENT}
+`;
+
+const RELATED_PRODUCTS_QUERY = `#graphql
+  query RelatedProducts(
+    $country: CountryCode
+    $handle: String!
+    $language: LanguageCode
+    $count: Int!
+  ) @inContext(country: $country, language: $language) {
+    product(handle: $handle) {
+      collections(first: 1) {
+        nodes {
+          products(first: $count) {
+            nodes {
+              id
+              title
+              handle
+              featuredImage {
+                id
+                url
+                altText
+                width
+                height
+              }
+              priceRange {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+                maxVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+              compareAtPriceRange {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+                maxVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+              variants(first: 100) {
+                nodes {
+                  id
+                  availableForSale
+                  image {
+                    id
+                    url
+                    altText
+                    width
+                    height
+                  }
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  compareAtPrice {
+                    amount
+                    currencyCode
+                  }
+                  selectedOptions {
+                    name
+                    value
+                  }
+                  sku
+                  title
+                  unitPrice {
+                    amount
+                    currencyCode
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 `;
 
 /** @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs */
