@@ -86,7 +86,7 @@ function RelatedProductsContent({product, relatedProducts}) {
   return (
     <div className="related-products-swiper">
       <Swiper
-      aria-label='Related products carousel'
+      aria-label="Related products carousel"
       {...SWIPER_CONFIG}>
         {filteredProducts.map((relatedProduct) => (
           <SwiperSlide key={relatedProduct.id}>
@@ -106,7 +106,7 @@ function RelatedProductsSkeleton() {
   return (
     <div className="related-products-swiper">
       <Swiper
-      aria-label='Related products carousel'
+      aria-label="Related products carousel"
       {...SWIPER_CONFIG}>
         {[...Array(4)].map((_, i) => (
           <SwiperSlide key={i}>
