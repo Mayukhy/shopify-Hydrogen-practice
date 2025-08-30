@@ -9,6 +9,48 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+// Shared Swiper configuration
+const SWIPER_CONFIG = {
+  modules: [Navigation, Pagination],
+  spaceBetween: 20,
+  slidesPerView: 1,
+  navigation: {
+    nextEl: '.swiper-button-next-custom',
+    prevEl: '.swiper-button-prev-custom',
+  },
+  pagination: { clickable: true },
+  breakpoints: {
+    640: {
+      slidesPerView: 2,
+      spaceBetween: 20,
+    },
+    768: {
+      slidesPerView: 3,
+      spaceBetween: 30,
+    },
+    1024: {
+      slidesPerView: 4,
+      spaceBetween: 30,
+    },
+  },
+};
+
+// Shared navigation buttons component
+const NavigationButtons = () => (
+  <>
+    <div className="swiper-button-prev-custom">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+    <div className="swiper-button-next-custom">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  </>
+);
+
 export default function RelatedProducts({product, relatedProducts}) {
   return (
     <div className="related-products">
@@ -43,30 +85,7 @@ function RelatedProductsContent({product, relatedProducts}) {
 
   return (
     <div className="related-products-swiper">
-      <Swiper
-        modules={[Navigation, Pagination]}
-        spaceBetween={20}
-        slidesPerView={1}
-        navigation={{
-          nextEl: '.swiper-button-next-custom',
-          prevEl: '.swiper-button-prev-custom',
-        }}
-        pagination={{ clickable: true }}
-        breakpoints={{
-          640: {
-            slidesPerView: 2,
-            spaceBetween: 20,
-          },
-          768: {
-            slidesPerView: 3,
-            spaceBetween: 30,
-          },
-          1024: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-        }}
-      >
+      <Swiper {...SWIPER_CONFIG}>
         {filteredProducts.map((relatedProduct) => (
           <SwiperSlide key={relatedProduct.id}>
             <ProductItem
@@ -76,18 +95,7 @@ function RelatedProductsContent({product, relatedProducts}) {
           </SwiperSlide>
         ))}
       </Swiper>
-      
-      {/* Custom Navigation Buttons */}
-      <div className="swiper-button-prev-custom">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      <div className="swiper-button-next-custom">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
+      <NavigationButtons />
     </div>
   );
 }
@@ -95,30 +103,7 @@ function RelatedProductsContent({product, relatedProducts}) {
 function RelatedProductsSkeleton() {
   return (
     <div className="related-products-swiper">
-      <Swiper
-        modules={[Navigation, Pagination]}
-        spaceBetween={20}
-        slidesPerView={1}
-        navigation={{
-          nextEl: '.swiper-button-next-custom',
-          prevEl: '.swiper-button-prev-custom',
-        }}
-        pagination={{ clickable: true }}
-        breakpoints={{
-          640: {
-            slidesPerView: 2,
-            spaceBetween: 20,
-          },
-          768: {
-            slidesPerView: 3,
-            spaceBetween: 30,
-          },
-          1024: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-        }}
-      >
+      <Swiper {...SWIPER_CONFIG}>
         {[...Array(4)].map((_, i) => (
           <SwiperSlide key={i}>
             <div className="product-item-skeleton">
@@ -129,18 +114,7 @@ function RelatedProductsSkeleton() {
           </SwiperSlide>
         ))}
       </Swiper>
-      
-      {/* Custom Navigation Buttons */}
-      <div className="swiper-button-prev-custom">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      <div className="swiper-button-next-custom">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
+      <NavigationButtons />
     </div>
   );
 }
