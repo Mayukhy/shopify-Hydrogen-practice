@@ -67,8 +67,7 @@ async function loadCriticalData({context, params, request}) {
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
   return {
-    product,
-    context
+    product
   };
 }
 
