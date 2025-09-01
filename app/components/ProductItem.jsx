@@ -14,7 +14,7 @@ import {useQuickAdd} from './QuickAddProvider';
  * }}
  */
 export function ProductItem({product, loading}) {
-  const {openModal, closeModal, isModalOpen} = useQuickAdd();
+  const {openModal, closeModal, isModalOpen, isMobile} = useQuickAdd();
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
   
@@ -27,10 +27,12 @@ export function ProductItem({product, loading}) {
     e.preventDefault();
     e.stopPropagation();
     openModal(product.id);
+    if (!isMobile) return;
+    e.target.closest('.quick-add-btn').style.opacity = 0;
   };
 
   return (
-    <div className="product-item-wrapper">
+    <div className="product-item-wrapper product-item" data-product-id={product.id}>
       <div className="product-item">
         <Link
           key={product.id}
@@ -54,7 +56,7 @@ export function ProductItem({product, loading}) {
                   onClick={handleQuickAddClick}
                   aria-label={`Quick add ${product.title}`}
                 >
-                  Quick Add
+                  Add to bag
                 </button>
               )}
             </div>

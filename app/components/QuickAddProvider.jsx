@@ -1,10 +1,25 @@
-import {createContext, useContext, useState} from 'react';
+import {createContext, useContext, useEffect, useState} from 'react';
 
 const QuickAddContext = createContext();
 
 export function QuickAddProvider({children}) {
   const [openModalId, setOpenModalId] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
+  // Check for mobile on client side only
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth <= 768);
+      };
+      // Initial check
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => {
+        window.removeEventListener('resize', checkMobile);
+      };
+    }
+  }, []);
   const openModal = (productId) => {
     setOpenModalId(productId);
   };
@@ -23,6 +38,7 @@ export function QuickAddProvider({children}) {
         openModal,
         closeModal,
         isModalOpen,
+        isMobile
       }}
     >
       {children}

@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import {Money} from '@shopify/hydrogen';
 import {AddToCartButton} from './AddToCartButton';
 import { useAside } from './Aside';
+import { useQuickAdd } from './QuickAddProvider';
 
 /**
  * @param {{
@@ -14,7 +15,9 @@ export function QuickAddModal({product, isOpen, onClose}) {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const {isMobile} = useQuickAdd();
   const {open} = useAside();
+
   // Handle ESC key to close modal
   useEffect(() => {
     const handleEscKey = (event) => {
@@ -83,11 +86,13 @@ export function QuickAddModal({product, isOpen, onClose}) {
   };
 
   // Reset state when modal closes
-  const handleClose = () => {
+  const handleClose = (e) => {
     setSelectedVariant(null);
     setSelectedOptions({});
     setIsAddingToCart(false);
     onClose();
+    if (!isMobile) return;
+    document.querySelector(`.product-item[data-product-id="${product.id}"] .quick-add-btn`).style.opacity = 1;
   };
 
   // Handle add to cart with loading state
@@ -95,7 +100,7 @@ export function QuickAddModal({product, isOpen, onClose}) {
     setIsAddingToCart(true);
     await event.target.form.requestSubmit();
     // Add a small delay to show loading state
-    await new Promise(resolve => setTimeout(resolve, 750));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await handleClose();
     await open("cart");
   };
