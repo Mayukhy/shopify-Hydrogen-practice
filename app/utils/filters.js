@@ -28,40 +28,43 @@ export function convertPriceRange(priceRange) {
 export function buildFiltersFromSearchParams(searchParams) {
   const filters = [];
 
-  // Basic filters
-  if (searchParams.get('availability')) {
-    filters.push({available: searchParams.get('availability') === 'true'});
-  }
-
-  if (searchParams.get('vendor')) {
-    filters.push({productVendor: searchParams.get('vendor')});
-  }
-
-  if (searchParams.get('productType')) {
-    filters.push({productType: searchParams.get('productType')});
-  }
-
-  // Price filter
-  if (searchParams.get('price')) {
-    const priceRange = convertPriceRange(searchParams.get('price'));
-    if (priceRange && (priceRange.min !== null || priceRange.max !== null)) {
-      const priceFilter = {price: {}};
-      if (priceRange.min !== null) priceFilter.price.min = priceRange.min;
-      if (priceRange.max !== null) priceFilter.price.max = priceRange.max;
-      filters.push(priceFilter);
-    }
-  }
-
-  // Variant filters
+  // Process all search parameters using forEach
   searchParams.forEach((value, key) => {
-    if (key.startsWith('variant_')) {
-      const optionName = key.replace('variant_', '');
-      filters.push({
-        variantOption: {
-          name: optionName,
-          value: value,
-        },
-      });
+    switch (key) {
+      case 'availability':
+        filters.push({available: value === 'true'});
+        break;
+      
+      case 'vendor':
+        filters.push({productVendor: value});
+        break;
+      
+      case 'productType':
+        filters.push({productType: value});
+        break;
+      
+      case 'price':
+        const priceRange = convertPriceRange(value);
+        if (priceRange && (priceRange.min !== null || priceRange.max !== null)) {
+          const priceFilter = {price: {}};
+          if (priceRange.min !== null) priceFilter.price.min = priceRange.min;
+          if (priceRange.max !== null) priceFilter.price.max = priceRange.max;
+          filters.push(priceFilter);
+        }
+        break;
+      
+      default:
+        // Handle variant filters
+        if (key.startsWith('variant_')) {
+          const optionName = key.replace('variant_', '');
+          filters.push({
+            variantOption: {
+              name: optionName,
+              value: value,
+            },
+          });
+        }
+        break;
     }
   });
 
@@ -76,4 +79,38 @@ export function buildFiltersFromSearchParams(searchParams) {
 export function getSortKeyFromParams(searchParams) {
   const sortKey = searchParams.get('sort') || 'COLLECTION_DEFAULT';
   return sortKey !== 'COLLECTION_DEFAULT' ? sortKey : undefined;
+}
+
+/**
+ * Parse filters from search parameters for UI state
+ * @param {URLSearchParams} searchParams - URL search parameters
+ * @returns {Object} Parsed filters object for component state
+ */
+export function parseFiltersFromSearchParams(searchParams) {
+  const filters = {
+    priceRange: {min: null, max: null}, // Always ensure priceRange exists
+    variantOptions: [], // Initialize variant options
+  };
+  
+  searchParams.forEach((value, key) => {
+    if (key === 'price') {
+      filters['priceRange'] = convertPriceRange(value);
+    } else if (key.startsWith('variant_')) {
+      // Handle variant filters
+      const optionName = key.replace('variant_', '');
+      if (!filters.variantOptions) {
+        filters.variantOptions = [];
+      }
+      filters.variantOptions.push({
+        variantOption: {
+          name: optionName,
+          value: value,
+        },
+      });
+    } else {
+      filters[key] = value;
+    }
+  });
+  
+  return filters;
 }

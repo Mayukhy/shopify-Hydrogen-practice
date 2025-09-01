@@ -7,6 +7,7 @@ import {ProductItem} from '~/components/ProductItem';
 import {QuickAddProvider} from '~/components/QuickAddProvider';
 import {FilterSidebar, FilterToggleButton} from '~/components/FilterSidebar';
 import {CollectionSort} from '~/components/CollectionSort';
+import {FilterSortProvider} from '~/components/FilterSortProvider';
 import {useState} from 'react';
 import {
   buildFiltersFromSearchParams,
@@ -110,55 +111,57 @@ export default function Collection() {
   };
 
   return (
-    <div className="collection-page">
-      <FilterSidebar
-        collection={collection}
-        isOpen={isFilterOpen}
-        onClose={handleFilterClose}
-      />
-
-      <div className="collection-main">
-        <div className="collection-header">
-          <div className="collection-title-section">
-            <h1>{collection.title}</h1>
-            <p className="collection-description">{collection.description}</p>
-          </div>
-        </div>
-
-        <div className="collection-controls">
-          <FilterToggleButton
-            filtersCount={filters.length}
-            onClick={handleFilterOpen}
-          />
-          <ActiveFilters filters={filters} />
-          <CollectionSort />
-        </div>
-        <QuickAddProvider>
-          <PaginatedResourceSection
-            connection={collection.products}
-            resourcesClassName="products-grid"
-          >
-            {/* <QuickAddProvider> */}
-            {({node: product, index}) => (
-              <ProductItem
-                key={product.id}
-                product={product}
-                loading={index < 8 ? 'eager' : undefined}
-              />
-            )}
-            {/* </QuickAddProvider> */}
-          </PaginatedResourceSection>
-        </QuickAddProvider>
-        <Analytics.CollectionView
-          data={{
-            collection: {
-              id: collection.id,
-              handle: collection.handle,
-            },
-          }}
+    <FilterSortProvider>
+      <div className="collection-page">
+        <FilterSidebar
+          collection={collection}
+          isOpen={isFilterOpen}
+          onClose={handleFilterClose}
         />
+
+        <div className="collection-main">
+          <div className="collection-header">
+            <div className="collection-title-section">
+              <h1>{collection.title}</h1>
+              <p className="collection-description">{collection.description}</p>
+            </div>
+          </div>
+
+          <div className="collection-controls">
+            <FilterToggleButton
+              filtersCount={filters.length}
+              onClick={handleFilterOpen}
+            />
+            <ActiveFilters filters={filters} />
+            <CollectionSort />
+          </div>
+          <QuickAddProvider>
+            <PaginatedResourceSection
+              connection={collection.products}
+              resourcesClassName="products-grid"
+            >
+              {/* <QuickAddProvider> */}
+              {({node: product, index}) => (
+                <ProductItem
+                  key={product.id}
+                  product={product}
+                  loading={index < 8 ? 'eager' : undefined}
+                />
+              )}
+              {/* </QuickAddProvider> */}
+            </PaginatedResourceSection>
+          </QuickAddProvider>
+          <Analytics.CollectionView
+            data={{
+              collection: {
+                id: collection.id,
+                handle: collection.handle,
+              },
+            }}
+          />
+        </div>
       </div>
-    </div>
+    </FilterSortProvider>
   );
 }
 

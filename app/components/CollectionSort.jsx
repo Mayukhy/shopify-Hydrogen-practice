@@ -1,8 +1,15 @@
 import {useSearchParams, useNavigate} from 'react-router';
+import { useFilterSort } from './FilterSortProvider';
+import { useEffect } from 'react';
 
 export function CollectionSort() {
   const [searchParams] = useSearchParams();
+  const {startLoading, stopLoading, isLoading} = useFilterSort();
   const navigate = useNavigate();
+
+  useEffect(() => {
+      stopLoading();
+  },[searchParams, stopLoading])
 
   const currentSort = searchParams.get('sort') || 'COLLECTION_DEFAULT';
 
@@ -16,6 +23,7 @@ export function CollectionSort() {
   ];
 
   const handleSortChange = (sortValue) => {
+    startLoading();
     const newSearchParams = new URLSearchParams(searchParams);
 
     if (sortValue === 'COLLECTION_DEFAULT') {

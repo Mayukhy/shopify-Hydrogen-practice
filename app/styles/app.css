@@ -422,6 +422,11 @@ button.reset:hover:not(:has(> *)) {
   }
 }
 
+.products-grid.loading {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 .product-item img {
   height: auto;
   width: 100%;
@@ -1405,6 +1410,7 @@ button.reset:hover:not(:has(> *)) {
   margin-right: 0.5rem;
 }
 .remove-filter {
+  display: flex;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1657,7 +1663,7 @@ button.reset:hover:not(:has(> *)) {
   font-size: 1rem;
   font-weight: 600;
   color: #1e293b;
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 0.2rem 0;
   letter-spacing: -0.01em;
 }
 
@@ -1790,6 +1796,105 @@ button.reset:hover:not(:has(> *)) {
 .size-item .checkbox-label {
   justify-content: center;
   font-weight: 400;
+}
+
+/* Accordion Styles */
+.accordion {
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.accordion-title {
+  font-weight: 400;
+  font-size: 1rem;
+  color: var(--color-text, #1e293b);
+}
+
+.accordion-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  color: var(--color-text-secondary, #64748b);
+}
+
+.accordion-icon.open {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  max-height: 0;
+  opacity: 0;
+}
+
+.accordion-content.open {
+  max-height: 1000px; /* Adjust based on your content */
+  opacity: 1;
+}
+
+.accordion-content-inner {
+  padding-bottom: 1rem;
+}
+
+/* Animation for smoother transitions */
+@media (prefers-reduced-motion: no-preference) {
+  .accordion-content {
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.2s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-content {
+    transition: none;
+  }
+  
+  .accordion-icon {
+    transition: none;
+  }
+}
+
+/* Loading State for Products Grid */
+.products-grid.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.products-grid.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.products-grid.loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  font-weight: 500;
+  color: var(--color-text, #1e293b);
 }
 
 /* Filter Toggle Button */

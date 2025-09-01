@@ -1,9 +1,13 @@
 import {useEffect, useState} from 'react';
 import {useSearchParams, useNavigate} from 'react-router';
-import {convertPriceRange} from '~/utils/filters';
+import {convertPriceRange, parseFiltersFromSearchParams} from '~/utils/filters';
+import Accordion from './common/Accordian';
+import {useFilterSort} from './FilterSortProvider';
 
 export function CollectionFilters({collection}) {
   const hasActiveFilters = Array.from(useSearchParams()[0].keys()).length > 0;
+  const { startLoading, stopLoading, isLoading } = useFilterSort();
+  
   const [currentFilters, setCurrentFilters] = useState({
     availability: '',
     vendor: '',
@@ -14,40 +18,24 @@ export function CollectionFilters({collection}) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const filters = {
-      priceRange: {min: null, max: null}, // Always ensure priceRange exists
-      variantOptions: [], // Initialize variant options
-    };
-    searchParams.forEach((value, key) => {
-      if (key === 'price') {
-        filters['priceRange'] = convertPriceRange(value);
-      } else if (key.startsWith('variant_')) {
-        // Handle variant filters
-        const optionName = key.replace('variant_', '');
-        if (!filters.variantOptions) {
-          filters.variantOptions = [];
-        }
-        filters.variantOptions.push({
-          variantOption: {
-            name: optionName,
-            value: value,
-          },
-        });
-      } else {
-        filters[key] = value;
-      }
-    });
+  // Get filter options from products
+  const filterOptions = getFilterOptions(collection.products.nodes);
 
+  // Handle filter updates from search params
+  useEffect(() => {
+    const filters = parseFiltersFromSearchParams(searchParams);
     setCurrentFilters((prevFilters) => ({
       ...prevFilters,
       ...filters,
     }));
-  }, [searchParams]);
-  // Get filter options from products
-  const filterOptions = getFilterOptions(collection.products.nodes);
+    // Stop loading when filters are updated
+    console.log('Filters updated, stopping loading');
+    stopLoading();
+  }, [searchParams, stopLoading]);
 
   const updateBasicFilter = (filterName, filterValue) => {
+    console.log('updateBasicFilter called, starting loading');
+    startLoading();
     setCurrentFilters((prevFilters) => ({
       ...prevFilters,
       [filterName]: filterValue,
@@ -62,6 +50,8 @@ export function CollectionFilters({collection}) {
   };
 
   const updatePriceFilter = (priceRange) => {
+    console.log('updatePriceFilter called, starting loading');
+    startLoading();
     const priceObj = convertPriceRange(priceRange);
     setCurrentFilters((prevFilters) => ({
       ...prevFilters,
@@ -77,6 +67,8 @@ export function CollectionFilters({collection}) {
   };
 
   const updateVariantFilter = (optionName, optionValue, isChecked) => {
+    console.log('updateVariantFilter called, starting loading');
+    startLoading();
     setCurrentFilters((prevFilters) => {
       let variantOptions = [...prevFilters.variantOptions];
       if (isChecked) {
@@ -119,11 +111,12 @@ export function CollectionFilters({collection}) {
         }
       });
     }
-
     navigate(`?${newSearchParams.toString()}`);
   };
 
   const clearAllFilters = () => {
+    console.log('clearAllFilters called, starting loading');
+    startLoading();
     setCurrentFilters({
       availability: '',
       vendor: '',
@@ -164,31 +157,36 @@ export function CollectionFilters({collection}) {
           <h3 className="filter-section-title">Basic Filters</h3>
 
           {/* Availability Filter */}
-          <div className="filter-group">
-            <label htmlFor="availability-filter" className="filter-label">
-              Availability
-            </label>
-            <div className="filter-input-wrapper">
-              <select
-                id="availability-filter"
-                value={currentFilters.availability}
-                onChange={(e) =>
-                  updateBasicFilter('availability', e.target.value)
-                }
-                className="filter-select"
-              >
-                <option value="">All Products</option>
-                <option value="true">In Stock</option>
-                <option value="false">Out of Stock</option>
-              </select>
+          <Accordion
+          title="Availability" 
+          isOpenByDefault={false}
+          className="custom-accordion-availability"
+          >
+            <div className="filter-group">
+              <div className="filter-input-wrapper">
+                <select
+                  id="availability-filter"
+                  value={currentFilters.availability}
+                  onChange={(e) =>
+                    updateBasicFilter('availability', e.target.value)
+                  }
+                  className="filter-select"
+                >
+                  <option value="">All Products</option>
+                  <option value="true">In Stock</option>
+                  <option value="false">Out of Stock</option>
+                </select>
+              </div>
             </div>
-          </div>
+          </Accordion>
 
           {/* Price Filter */}
+          <Accordion
+            title="Price Range"
+            isOpenByDefault={false}
+            className="custom-accordion-price"
+          >
           <div className="filter-group">
-            <label htmlFor="price-filter" className="filter-label">
-              Price Range
-            </label>
             <div className="filter-input-wrapper">
               <select
                 id="price-filter"
@@ -217,55 +215,62 @@ export function CollectionFilters({collection}) {
               </select>
             </div>
           </div>
+          </Accordion>
 
           {/* Vendor Filter */}
           {filterOptions.vendors.length > 1 && (
-            <div className="filter-group">
-              <label htmlFor="vendor-filter" className="filter-label">
-                Brand
-              </label>
-              <div className="filter-input-wrapper">
-                <select
-                  id="vendor-filter"
-                  value={currentFilters.vendor}
-                  onChange={(e) => updateBasicFilter('vendor', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All Brands</option>
-                  {filterOptions.vendors.map((vendor) => (
-                    <option key={vendor} value={vendor}>
-                      {vendor}
-                    </option>
-                  ))}
-                </select>
+            <Accordion
+              title="Brand"
+              isOpenByDefault={false}
+              className="custom-accordion-vendor"
+            >
+              <div className="filter-group">
+                <div className="filter-input-wrapper">
+                  <select
+                    id="vendor-filter"
+                    value={currentFilters.vendor}
+                    onChange={(e) => updateBasicFilter('vendor', e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="">All Brands</option>
+                    {filterOptions.vendors.map((vendor) => (
+                      <option key={vendor} value={vendor}>
+                        {vendor}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            </Accordion>
           )}
 
           {/* Product Type Filter */}
           {filterOptions.productTypes.length > 1 && (
-            <div className="filter-group">
-              <label htmlFor="productType-filter" className="filter-label">
-                Product Type
-              </label>
-              <div className="filter-input-wrapper">
-                <select
-                  id="productType-filter"
-                  value={currentFilters.productType}
-                  onChange={(e) =>
-                    updateBasicFilter('productType', e.target.value)
-                  }
-                  className="filter-select"
-                >
-                  <option value="">All Types</option>
-                  {filterOptions.productTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
+            <Accordion
+              title="Product Type"
+              isOpenByDefault={false}
+              className="custom-accordion-product-type"
+            >
+              <div className="filter-group">
+                <div className="filter-input-wrapper">
+                  <select
+                    id="productType-filter"
+                    value={currentFilters.productType}
+                    onChange={(e) =>
+                      updateBasicFilter('productType', e.target.value)
+                    }
+                    className="filter-select"
+                  >
+                    <option value="">All Types</option>
+                    {filterOptions.productTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            </Accordion>
           )}
         </div>
 
@@ -273,105 +278,110 @@ export function CollectionFilters({collection}) {
         {filterOptions.variantOptions.length > 0 && (
           <div className="filter-section variant-filters">
             <h3 className="filter-section-title">Product Options</h3>
-
             {filterOptions.variantOptions.map(
               (option) =>
                 option.values.length > 1 && (
-                  <div
-                    key={option.name}
-                    className="filter-group variant-filter-group"
+                  <Accordion
+                    title={option.name}
+                    isOpenByDefault={false}
+                    className="custom-accordion-variant"
+                    filters={currentFilters.variantOptions || []}
                   >
-                    <label className="filter-label">{option.name}</label>
+                    <div
+                      key={option.name}
+                      className="filter-group variant-filter-group"
+                    >
 
-                    {/* Color and Size variants use checkboxes */}
-                    {['Color', 'Size'].includes(option.name) ? (
-                      <div
-                        className={`checkbox-grid ${option.name.toLowerCase()}-grid`}
-                      >
-                        {option.values.map((value) => {
-                          const isChecked =
-                            currentFilters.variantOptions.some(
-                              (filterOption) =>
-                                filterOption.variantOption.name ===
-                                  option.name &&
-                                filterOption.variantOption.value === value,
-                            ) || false;
-                          return (
-                            <label
-                              key={value}
-                              className={`checkbox-item ${option.name.toLowerCase()}-item ${isChecked ? 'checked' : ''}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) =>
-                                  updateVariantFilter(
-                                    option.name,
-                                    value,
-                                    e.target.checked,
-                                  )
-                                }
-                                className="checkbox-input"
-                              />
-                              <span className="checkbox-label">
-                                {option.name === 'Color' && (
-                                  <span
-                                    className="color-swatch"
-                                    style={{
-                                      backgroundColor: value.toLowerCase(),
-                                    }}
-                                    aria-label={value}
-                                  />
-                                )}
-                                <span className="checkbox-text">{value}</span>
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      /* Other variants use select dropdown */
-                      <div className="filter-input-wrapper">
-                        <select
-                          value={
-                            currentFilters.variantOptions.find(
-                              (filterOption) =>
-                                filterOption.variantOption.name === option.name,
-                            )?.variantOption.value || ''
-                          }
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // First, remove any existing filters for this option name
-                            const existingFilter =
-                              currentFilters.variantOptions.find(
+                      {/* Color and Size variants use checkboxes */}
+                      {['Color', 'Size'].includes(option.name) ? (
+                        <div
+                          className={`checkbox-grid ${option.name.toLowerCase()}-grid`}
+                        >
+                          {option.values.map((value) => {
+                            const isChecked =
+                              currentFilters.variantOptions.some(
                                 (filterOption) =>
                                   filterOption.variantOption.name ===
+                                    option.name &&
+                                  filterOption.variantOption.value === value,
+                              ) || false;
+                            return (
+                              <label
+                                key={value}
+                                className={`checkbox-item ${option.name.toLowerCase()}-item ${isChecked ? 'checked' : ''}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) =>
+                                    updateVariantFilter(
+                                      option.name,
+                                      value,
+                                      e.target.checked,
+                                    )
+                                  }
+                                  className="checkbox-input"
+                                />
+                                <span className="checkbox-label">
+                                  {option.name === 'Color' && (
+                                    <span
+                                      className="color-swatch"
+                                      style={{
+                                        backgroundColor: value.toLowerCase(),
+                                      }}
+                                      aria-label={value}
+                                    />
+                                  )}
+                                  <span className="checkbox-text">{value}</span>
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        /* Other variants use select dropdown */
+                        <div className="filter-input-wrapper">
+                          <select
+                            value={
+                              currentFilters.variantOptions.find(
+                                (filterOption) =>
+                                  filterOption.variantOption.name === option.name,
+                              )?.variantOption.value || ''
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // First, remove any existing filters for this option name
+                              const existingFilter =
+                                currentFilters.variantOptions.find(
+                                  (filterOption) =>
+                                    filterOption.variantOption.name ===
+                                    option.name,
+                                );
+                              if (existingFilter) {
+                                updateVariantFilter(
                                   option.name,
-                              );
-                            if (existingFilter) {
-                              updateVariantFilter(
-                                option.name,
-                                existingFilter.variantOption.value,
-                                false,
-                              );
-                            }
-                            // Then add the new filter if a value was selected
-                            if (value) {
-                              updateVariantFilter(option.name, value, true);
-                            }
-                          }}
-                          className="filter-select"
-                        >
-                          <option value="">All {option.name}s</option>
-                          {option.values.map((value) => (
-                            <option key={value} value={value}>
-                              {value}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </div>
+                                  existingFilter.variantOption.value,
+                                  false,
+                                );
+                              }
+                              // Then add the new filter if a value was selected
+                              if (value) {
+                                updateVariantFilter(option.name, value, true);
+                              }
+                            }}
+                            className="filter-select"
+                          >
+                            <option value="">All {option.name}s</option>
+                            {option.values.map((value) => (
+                              <option key={value} value={value}>
+                                {value}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </Accordion>
                 ),
             )}
           </div>

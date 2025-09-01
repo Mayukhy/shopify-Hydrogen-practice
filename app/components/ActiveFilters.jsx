@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
+import { useFilterSort } from './FilterSortProvider';
 
 export default function ActiveFilters({filters}) {
   const [searchParams] = useSearchParams();
+  const {startLoading, stopLoading, isLoading} = useFilterSort();
   const navigate = useNavigate();
+
+  useEffect(() => {
+      stopLoading();
+  },[searchParams, stopLoading])
+
   const removeFilter = (filter, index) => {
+    startLoading();
     const newSearchParams = new URLSearchParams(searchParams.toString());
     if (filter.available !== undefined) {
       newSearchParams.delete(`availability`);
@@ -40,7 +48,7 @@ export default function ActiveFilters({filters}) {
         <span className="active-filter" key={idx}>
           {filter.variantOption &&
             `${filter.variantOption.name}: ${filter.variantOption.value} `}
-          {filter.price && `Price: $${filter.price.min} - $${filter.price.max}`}
+          {filter.price && (filter.price.min !== 200 ? `Price: $${filter.price.min} - $${filter.price.max}` : `Price: $${filter.price.min}+`)}
           {filter.productVendor && `Vendor: ${filter.productVendor}`}
           {filter.productType && `Type: ${filter.productType}`}
           {filter.available !== undefined &&
