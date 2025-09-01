@@ -54,7 +54,7 @@ export function QuickAddModal({product, isOpen, onClose}) {
   if (!isOpen || !product) return null;
 
   // Get the first option (like "Size") from the product
-  const firstOption = product.options?.[0];
+  const firstOption = product.options?.find(option => option.name === "Size");
   const hasVariants = product.variants?.nodes?.length > 1;
 
   // If no variants or options, use the first/only variant
