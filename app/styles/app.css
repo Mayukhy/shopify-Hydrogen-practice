@@ -411,8 +411,12 @@ button.reset:hover:not(:has(> *)) {
 .products-grid {
   display: grid;
   grid-gap: 1.5rem;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(1, 1fr);
   margin-bottom: 2rem;
+
+  @media screen and (min-width: 32em) and (max-width: 44.99em) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   @media screen and (min-width: 45em) {
     grid-template-columns: repeat(3, 1fr);
