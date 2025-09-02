@@ -8,10 +8,30 @@ export default defineConfig({
   plugins: [hydrogen(), oxygen(), reactRouter(), tsconfigPaths()],
   build: {
     // Allow a strict Content-Security-Policy
-    // withtout inlining assets as base64:
+    // without inlining assets as base64:
     assetsInlineLimit: 0,
+    // Optimize for Vercel deployment
+    target: 'node18',
+    rollupOptions: {
+      external: [
+        // Add Node.js built-ins that should be external
+        'crypto',
+        'stream',
+        'util',
+        'buffer',
+        'process'
+      ]
+    }
   },
   ssr: {
+    // Configure for Vercel Edge Runtime compatibility
+    external: [
+      'crypto',
+      'stream', 
+      'util',
+      'buffer',
+      'process'
+    ],
     optimizeDeps: {
       /**
        * Include dependencies here if they throw CJS<>ESM errors.
@@ -25,5 +45,9 @@ export default defineConfig({
        */
       include: [],
     },
+  },
+  // Define global variables for browser compatibility
+  define: {
+    global: 'globalThis',
   },
 });
