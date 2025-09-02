@@ -52,11 +52,6 @@ export function CollectionFilters({collection}) {
   const updatePriceFilter = (priceRange) => {
     console.log('updatePriceFilter called, starting loading');
     startLoading();
-    const priceObj = convertPriceRange(priceRange);
-    setCurrentFilters((prevFilters) => ({
-      ...prevFilters,
-      priceRange: priceObj,
-    }));
     const newSearchParams = new URLSearchParams(searchParams);
     if (!priceRange) {
       newSearchParams.delete('price');
@@ -69,30 +64,6 @@ export function CollectionFilters({collection}) {
   const updateVariantFilter = (optionName, optionValue, isChecked) => {
     console.log('updateVariantFilter called, starting loading');
     startLoading();
-    setCurrentFilters((prevFilters) => {
-      let variantOptions = [...prevFilters.variantOptions];
-      if (isChecked) {
-        variantOptions.push({
-          variantOption: {
-            name: optionName,
-            value: optionValue,
-          },
-        });
-      } else {
-        variantOptions = variantOptions.filter(
-          (option) =>
-            !(
-              option.variantOption.name === optionName &&
-              option.variantOption.value === optionValue
-            ),
-        );
-      }
-      return {
-        ...prevFilters,
-        variantOptions,
-      };
-    });
-
     const newSearchParams = new URLSearchParams(searchParams);
 
     if (isChecked) {
