@@ -1,19 +1,12 @@
 import {createRequestHandler} from '@shopify/remix-oxygen';
-import {createAppLoadContext} from '../app/lib/context.js';
+import {createAppLoadContext} from '~/lib/context';
 
 /**
- * Vercel serverless function handler for Hydrogen app
+ * Vercel adapter for Hydrogen app
  */
-export default async function handler(req, res) {
+export default async function handler(request, context) {
   try {
-    // Convert Vercel request/response to standard Request/Response
-    const request = new Request(`https://${req.headers.host}${req.url}`, {
-      method: req.method,
-      headers: new Headers(req.headers),
-      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
-    });
-
-    // Create environment from process.env
+    // Create environment from Vercel context
     const env = {
       SESSION_SECRET: process.env.SESSION_SECRET,
       PUBLIC_STOREFRONT_API_TOKEN: process.env.PUBLIC_STOREFRONT_API_TOKEN,
@@ -28,32 +21,21 @@ export default async function handler(req, res) {
     const appLoadContext = await createAppLoadContext(
       request,
       env,
-      {}, // execution context
+      context,
     );
 
     const handleRequest = createRequestHandler({
       // eslint-disable-next-line import/no-unresolved
       build: await import('virtual:react-router/server-build'),
-      mode: process.env.NODE_ENV || 'production',
+      mode: process.env.NODE_ENV,
       getLoadContext: () => appLoadContext,
     });
 
-    const response = await handleRequest(request);
-    
-    // Convert Response back to Vercel format
-    res.status(response.status);
-    
-    // Set headers
-    for (const [key, value] of response.headers.entries()) {
-      res.setHeader(key, value);
-    }
-    
-    // Send body
-    const body = await response.text();
-    res.send(body);
-
+    return handleRequest(request);
   } catch (error) {
     console.error('Error in Vercel handler:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return new Response('Internal Server Error', {
+      status: 500,
+    });
   }
 }
