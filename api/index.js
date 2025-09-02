@@ -1,59 +1,44 @@
-import {createRequestHandler} from '@shopify/remix-oxygen';
-import {createAppLoadContext} from '../app/lib/context.js';
-
 /**
  * Vercel serverless function handler for Hydrogen app
  */
 export default async function handler(req, res) {
   try {
-    // Convert Vercel request/response to standard Request/Response
-    const request = new Request(`https://${req.headers.host}${req.url}`, {
-      method: req.method,
-      headers: new Headers(req.headers),
-      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
-    });
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    // Create environment from process.env
-    const env = {
-      SESSION_SECRET: process.env.SESSION_SECRET,
-      PUBLIC_STOREFRONT_API_TOKEN: process.env.PUBLIC_STOREFRONT_API_TOKEN,
-      PRIVATE_STOREFRONT_API_TOKEN: process.env.PRIVATE_STOREFRONT_API_TOKEN,
-      PUBLIC_STORE_DOMAIN: process.env.PUBLIC_STORE_DOMAIN,
-      PUBLIC_STOREFRONT_API_VERSION: process.env.PUBLIC_STOREFRONT_API_VERSION,
-      PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID: process.env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID,
-      PUBLIC_CUSTOMER_ACCOUNT_API_URL: process.env.PUBLIC_CUSTOMER_ACCOUNT_API_URL,
-      ...process.env
-    };
-
-    const appLoadContext = await createAppLoadContext(
-      request,
-      env,
-      {}, // execution context
-    );
-
-    const handleRequest = createRequestHandler({
-      // eslint-disable-next-line import/no-unresolved
-      build: await import('virtual:react-router/server-build'),
-      mode: process.env.NODE_ENV || 'production',
-      getLoadContext: () => appLoadContext,
-    });
-
-    const response = await handleRequest(request);
-    
-    // Convert Response back to Vercel format
-    res.status(response.status);
-    
-    // Set headers
-    for (const [key, value] of response.headers.entries()) {
-      res.setHeader(key, value);
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
     }
-    
-    // Send body
-    const body = await response.text();
-    res.send(body);
+
+    // Simple response for now to test if the function works
+    const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Hydrogen App</title>
+        <meta charset="utf-8">
+      </head>
+      <body>
+        <h1>Hydrogen App is Running on Vercel!</h1>
+        <p>Method: ${req.method}</p>
+        <p>URL: ${req.url}</p>
+        <p>Time: ${new Date().toISOString()}</p>
+      </body>
+    </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.status(200).send(html);
 
   } catch (error) {
     console.error('Error in Vercel handler:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ 
+      error: 'Internal Server Error',
+      message: error.message,
+      stack: error.stack 
+    });
   }
 }
