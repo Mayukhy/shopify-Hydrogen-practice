@@ -1,63 +1,121 @@
+// @ts-ignore
 // Virtual entry point for the app
-import {storefrontRedirect} from '@shopify/hydrogen';
-import {createRequestHandler} from '@shopify/remix-oxygen';
-import {createAppLoadContext} from '~/lib/context';
+import * as remixBuild from '@remix-run/dev/server-build';
+import {createRequestHandler} from '@remix-run/server-runtime';
+
+import {
+  cartGetIdDefault,
+  cartSetIdDefault,
+  createCartHandler,
+  createStorefrontClient,
+  createCustomerAccountClient,
+} from '@shopify/hydrogen';
+
+import {AppSession} from '~/lib/session';
+import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
 
 /**
  * Export a fetch handler in module format.
  */
-export default {
-  /**
-   * @param {Request} request
-   * @param {Env} env
-   * @param {ExecutionContext} executionContext
-   * @return {Promise<Response>}
-   */
-  async fetch(request, env, executionContext) {
-    try {
-      const appLoadContext = await createAppLoadContext(
-        request,
-        env,
-        executionContext,
-      );
 
-      /**
-       * Create a Remix request handler and pass
-       * Hydrogen's Storefront client to the loader context.
-       */
-      const handleRequest = createRequestHandler({
-        // eslint-disable-next-line import/no-unresolved
-        build: await import('virtual:react-router/server-build'),
-        mode: process.env.NODE_ENV,
-        getLoadContext: () => appLoadContext,
-      });
+export default async function (request) {
+  try {
+    /**
+     * This has to be done so messy because process.env can't be destructured
+     * and only variables explicitly named are present inside a Vercel Edge Function.
+     * See https://github.com/vercel/next.js/pull/31237/files
+     */
+    const env = {
+      SESSION_SECRET: '',
+      PUBLIC_STOREFRONT_API_TOKEN: '',
+      PRIVATE_STOREFRONT_API_TOKEN: '',
+      PUBLIC_STORE_DOMAIN: '',
+      PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID: '',
+      PUBLIC_CUSTOMER_ACCOUNT_API_URL: '',
+      PUBLIC_CHECKOUT_DOMAIN: '',
+    };
 
-      const response = await handleRequest(request);
+    env.SESSION_SECRET = process.env.SESSION_SECRET;
+    env.PUBLIC_STOREFRONT_API_TOKEN = process.env.PUBLIC_STOREFRONT_API_TOKEN;
+    env.PRIVATE_STOREFRONT_API_TOKEN = process.env.PRIVATE_STOREFRONT_API_TOKEN;
+    env.PUBLIC_STORE_DOMAIN = process.env.PUBLIC_STORE_DOMAIN;
+    env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID = process.env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID;
+    env.PUBLIC_CUSTOMER_ACCOUNT_API_URL = process.env.PUBLIC_CUSTOMER_ACCOUNT_API_URL;
+    env.PUBLIC_CHECKOUT_DOMAIN = process.env.PUBLIC_CHECKOUT_DOMAIN;
 
-      if (appLoadContext.session.isPending) {
-        response.headers.set(
-          'Set-Cookie',
-          await appLoadContext.session.commit(),
-        );
-      }
-
-      if (response.status === 404) {
-        /**
-         * Check for redirects only when there's a 404 from the app.
-         * If the redirect doesn't exist, then `storefrontRedirect`
-         * will pass through the 404 response.
-         */
-        return storefrontRedirect({
-          request,
-          response,
-          storefront: appLoadContext.storefront,
-        });
-      }
-
-      return response;
-    } catch (error) {
-      console.error(error);
-      return new Response('An unexpected error occurred', {status: 500});
+    /**
+     * Open a cache instance in the worker and a custom session instance.
+     */
+    if (!env?.SESSION_SECRET) {
+      throw new Error('SESSION_SECRET process.environment variable is not set');
     }
-  },
-};
+
+    const [session] = await Promise.all([
+      AppSession.init(request, [process.env.SESSION_SECRET]),
+    ]);
+
+    /**
+     * Create Hydrogen's Storefront client.
+     */
+    const {storefront} = createStorefrontClient({
+      buyerIp: request.headers.get('x-forwarded-for') ?? undefined,
+      i18n: {language: 'EN', country: 'US'},
+      publicStorefrontToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+      privateStorefrontToken: env.PRIVATE_STOREFRONT_API_TOKEN,
+      storeDomain: env.PUBLIC_STORE_DOMAIN,
+      // storefrontId: process.env.PUBLIC_STOREFRONT_ID,
+      // requestGroupId: request.headers.get('request-id'),
+    });
+
+    /**
+     * Create a client for Customer Account API.
+     */
+    const customerAccount = createCustomerAccountClient({
+      request,
+      session,
+      customerAccountId: env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID,
+      customerAccountUrl: env.PUBLIC_CUSTOMER_ACCOUNT_API_URL,
+    });
+
+    const cart = createCartHandler({
+      storefront,
+      customerAccount,
+      getCartId: cartGetIdDefault(request.headers),
+      setCartId: cartSetIdDefault(),
+      cartQueryFragment: CART_QUERY_FRAGMENT,
+    });
+
+    const handleRequest = createRequestHandler(remixBuild, 'production');
+
+    const response = await handleRequest(request, {
+      session,
+      storefront,
+      customerAccount,
+      cart,
+      env,
+      waitUntil: () => Promise.resolve(),
+    });
+
+    if (session.isPending) {
+      response.headers.set(
+        'Set-Cookie',
+        await session.commit(),
+      );
+    }
+
+    if (response.status === 404) {
+      /**
+       * Check for redirects only when there's a 404 from the app.
+       * If the redirect doesn't exist, then `storefrontRedirect`
+       * will pass through the 404 response.
+       */
+      // return storefrontRedirect({request, response, storefront});
+    }
+
+    return response;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    return new Response('An unexpected error occurred', {status: 500});
+  }
+}
