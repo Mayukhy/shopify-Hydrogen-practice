@@ -5,6 +5,18 @@ Hydrogen is Shopify’s stack for headless commerce. Hydrogen is designed to dov
 [Check out Hydrogen docs](https://shopify.dev/custom-storefronts/hydrogen)
 [Get familiar with Remix](https://remix.run/docs/en/v1)
 
+## Screenshots
+
+UI previews from the Hydrogen practice storefront.
+
+| Homepage hero | Quick Add modal |
+| --- | --- |
+| <img src="docs/screenshots/homepage-hero.png" alt="Homepage hero showing High Top Sneakers with size selector and Add to Bag" width="600"/> | <img src="docs/screenshots/quick-add-modal.png" alt="Quick Add modal for Frontpack with color options" width="600"/> |
+
+| Filters drawer | Mobile filters applied |
+| --- | --- |
+| <img src="docs/screenshots/filters-sidebar.png" alt="Filters drawer with Size and Color options" width="300"/> | <img src="docs/screenshots/mobile-filters-applied.png" alt="Mobile view showing applied filter chips: Size Medium, Color Ocean, Color Clay, Size X-Large" width="300"/> |
+
 ## What's included
 
 - Remix
