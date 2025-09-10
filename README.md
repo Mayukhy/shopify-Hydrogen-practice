@@ -11,11 +11,13 @@ UI previews from the Hydrogen practice storefront.
 
 | Homepage hero | Quick Add modal |
 | --- | --- |
-| <img src="docs/screenshots/homepage-hero.png" alt="Homepage hero showing High Top Sneakers with size selector and Add to Bag" width="600"/> | <img src="docs/screenshots/quick-add-modal.png" alt="Quick Add modal for Frontpack with color options" width="600"/> |
+| <img width=600 alt="image" src="https://github.com/user-attachments/assets/61e90dcb-aa58-4aa1-ac22-d6dac09f82d7" /> | <img width=600 alt="image" src="https://github.com/user-attachments/assets/b8c3ea1c-d464-4d92-9034-751f7728e58c" />
+ |
 
 | Filters drawer | Mobile filters applied |
 | --- | --- |
-| <img src="docs/screenshots/filters-sidebar.png" alt="Filters drawer with Size and Color options" width="300"/> | <img src="docs/screenshots/mobile-filters-applied.png" alt="Mobile view showing applied filter chips: Size Medium, Color Ocean, Color Clay, Size X-Large" width="300"/> |
+| <img width="300" alt="image" src="https://github.com/user-attachments/assets/86543591-e05a-42b9-8861-db650685ff08" /> | <img width="300" alt="image" src="https://github.com/user-attachments/assets/abcab5b3-e424-499a-b476-932999107e9c" />
+ |
 
 ## What's included
 
