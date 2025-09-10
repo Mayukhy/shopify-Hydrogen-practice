@@ -1,9 +1,19 @@
 import {redirect} from '@shopify/remix-oxygen';
-import {useLoaderData} from 'react-router';
+import {useLoaderData, useSearchParams} from 'react-router';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {QuickAddProvider} from '~/components/QuickAddProvider';
+import {FilterSidebar, FilterToggleButton} from '~/components/FilterSidebar';
+import {CollectionSort} from '~/components/CollectionSort';
+import {FilterSortProvider} from '~/components/FilterSortProvider';
+import {useState} from 'react';
+import {
+  buildFiltersFromSearchParams,
+  getSortKeyFromParams,
+} from '~/utils/filters';
+import ActiveFilters from '~/components/ActiveFilters';
 
 /**
  * @type {MetaFunction<typeof loader>}
@@ -34,8 +44,15 @@ async function loadCriticalData({context, params, request}) {
   const {handle} = params;
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: 20,
   });
+
+  const url = new URL(request.url);
+  const searchParams = url.searchParams;
+
+  // Get sort parameter and build filters using utility functions
+  const sortKey = getSortKeyFromParams(searchParams);
+  const filters = buildFiltersFromSearchParams(searchParams);
 
   if (!handle) {
     throw redirect('/collections');
@@ -43,7 +60,12 @@ async function loadCriticalData({context, params, request}) {
 
   const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
+      variables: {
+        handle,
+        ...paginationVariables,
+        sortKey,
+        filters: filters.length > 0 ? filters : undefined,
+      },
       // Add other queries here, so that they are loaded in parallel
     }),
   ]);
@@ -59,6 +81,7 @@ async function loadCriticalData({context, params, request}) {
 
   return {
     collection,
+    filters,
   };
 }
 
@@ -74,33 +97,71 @@ function loadDeferredData({context}) {
 
 export default function Collection() {
   /** @type {LoaderReturnData} */
-  const {collection} = useLoaderData();
+  const {collection, filters} = useLoaderData();
+  const [searchParams] = useSearchParams();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const handleFilterOpen = () => {
+    setIsFilterOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const handleFilterClose = () => {
+    setIsFilterOpen(false);
+    document.body.style.overflow = 'auto';
+  };
 
   return (
-    <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection
-        connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
+    <FilterSortProvider>
+      <div className="collection-page">
+        <FilterSidebar
+          collection={collection}
+          isOpen={isFilterOpen}
+          onClose={handleFilterClose}
+        />
+
+        <div className="collection-main">
+          <div className="collection-header">
+            <div className="collection-title-section">
+              <h1>{collection.title}</h1>
+              <p className="collection-description">{collection.description}</p>
+            </div>
+          </div>
+
+          <div className="collection-controls">
+            <FilterToggleButton
+              filtersCount={filters.length}
+              onClick={handleFilterOpen}
+            />
+            <ActiveFilters filters={filters} />
+            <CollectionSort />
+          </div>
+          <QuickAddProvider>
+            <PaginatedResourceSection
+              connection={collection.products}
+              resourcesClassName="products-grid"
+            >
+              {/* <QuickAddProvider> */}
+              {({node: product, index}) => (
+                <ProductItem
+                  key={product.id}
+                  product={product}
+                  loading={index < 8 ? 'eager' : undefined}
+                />
+              )}
+              {/* </QuickAddProvider> */}
+            </PaginatedResourceSection>
+          </QuickAddProvider>
+          <Analytics.CollectionView
+            data={{
+              collection: {
+                id: collection.id,
+                handle: collection.handle,
+              },
+            }}
           />
-        )}
-      </PaginatedResourceSection>
-      <Analytics.CollectionView
-        data={{
-          collection: {
-            id: collection.id,
-            handle: collection.handle,
-          },
-        }}
-      />
-    </div>
+        </div>
+      </div>
+    </FilterSortProvider>
   );
 }
 
@@ -109,16 +170,100 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     amount
     currencyCode
   }
+  fragment ProductVariant on ProductVariant {
+    availableForSale
+    compareAtPrice {
+      amount
+      currencyCode
+    }
+    id
+    image {
+      __typename
+      id
+      url
+      altText
+      width
+      height
+    }
+    price {
+      amount
+      currencyCode
+    }
+    product {
+      title
+      handle
+    }
+    selectedOptions {
+      name
+      value
+    }
+    sku
+    title
+    unitPrice {
+      amount
+      currencyCode
+    }
+  }
   fragment ProductItem on Product {
     id
     handle
     title
+    vendor
+    productType
     featuredImage {
       id
       altText
       url
       width
       height
+    }
+    options {
+      name
+      optionValues {
+        name
+        firstSelectableVariant {
+          ...ProductVariant
+        }
+        swatch {
+          color
+          image {
+            previewImage {
+              url
+            }
+          }
+        }
+      }
+    }
+    variants(first: 100) {
+      nodes {
+        id
+        availableForSale
+        image {
+          id
+          url
+          altText
+          width
+          height
+        }
+        price {
+          amount
+          currencyCode
+        }
+        compareAtPrice {
+          amount
+          currencyCode
+        }
+        selectedOptions {
+          name
+          value
+        }
+        sku
+        title
+        unitPrice {
+          amount
+          currencyCode
+        }
+      }
     }
     priceRange {
       minVariantPrice {
@@ -131,7 +276,7 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
   }
 `;
 
-// NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
+// NOTE: https://shopify.dev/docs/api/storefront/2024-07/objects/collection
 const COLLECTION_QUERY = `#graphql
   ${PRODUCT_ITEM_FRAGMENT}
   query Collection(
@@ -142,6 +287,8 @@ const COLLECTION_QUERY = `#graphql
     $last: Int
     $startCursor: String
     $endCursor: String
+    $sortKey: ProductCollectionSortKeys
+    $filters: [ProductFilter!]
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -152,7 +299,9 @@ const COLLECTION_QUERY = `#graphql
         first: $first,
         last: $last,
         before: $startCursor,
-        after: $endCursor
+        after: $endCursor,
+        filters: $filters,
+        sortKey: $sortKey
       ) {
         nodes {
           ...ProductItem
